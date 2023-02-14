@@ -54,6 +54,7 @@ class User_old
 
     /**
      * @ORM\Column(type="json")
+     * @Groups({"admin:read", "admin:write"})
      */
     private $roles = [];
 

@@ -23,7 +23,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ApiResource(
     operations: [
-        new Get(security: "is_granted('ROLE_USER') and object == user"),
+        new Get(security: "is_granted('ROLE_ADMIN') or object == user"),
         new GetCollection(security: "is_granted('ROLE_ADMIN')"),
         new Post(security: "is_granted('PUBLIC_ACCESS')"),
         new Put(security: "is_granted('ROLE_USER') and object == user"),
@@ -34,7 +34,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         'groups'=>['users:read']
     ],
     denormalizationContext: [
-        'groups'=>['users:write']
+        'groups'=>['users:write',]
     ],
     security: "is_granted('ROLE_USER')",//default access operation unless the operation has his own security
 )]
@@ -52,8 +52,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $email = null;
 
     #[ORM\Column]
-    #[Groups(['users:write'])]
     private array $roles = [];
+
 
     /**
      * @var string The hashed password
@@ -109,6 +109,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @see UserInterface
      */
+    #[Groups(['admin:read'])]
     public function getRoles(): array
     {
         $roles = $this->roles;
@@ -191,5 +192,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    #[Groups(['admin:read'])]
+    public function getphoneNumber():?string{
+
+        return '0291309272472';
+    }
 
 }

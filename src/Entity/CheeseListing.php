@@ -35,6 +35,8 @@ use Symfony\Component\Validator\Constraints as Assert;
             uriTemplate: "/cheeses/{id}",
             defaults: ['color'=> 'brown'],
             requirements: ['id'=>'\d+'],
+            /*Lorsque j'obtient un seul élément, je souhaite inclure toutes les propriétés qui ont le cheeses:read groupe comme d'habitude. Mais je souhaite également
+             inclure toutes les propriétés dans un nouveau cheese_listing:item:get groupe.*/
             normalizationContext: [
                 'groups'=>['cheeses:read','cheeses:item:get']
             ]

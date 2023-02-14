@@ -476,6 +476,10 @@ ___________________________________________________________
             new GetCollection(),
             new Post(),
             new Get(
+
+           /*Lorsque j'obtient un seul élément, je souhaite inclure toutes les propriétés qui ont le cheeses:read groupe comme d'habitude. Mais je souhaite également
+             inclure toutes les propriétés dans un nouveau cheese_listing:item:get groupe.*/
+
             normalizationContext: [ 'groups'=>['cheeses:read','cheeses:item:get']]
             ),
             new Patch(),
@@ -527,99 +531,165 @@ ___________________________________________________________
 
         - <blue>symfony console security encode
         - <blue>symfony console security:hash-password
-  - ## Authorization
-       - <yel>access control 
-    ```
-      #[ApiResource(
-      operations: [
-      new Get(security: "is_granted('ROLE_USER') and object == user"),
-      new GetCollection(security: "is_granted('ROLE_ADMIN')"),
-      new Post(security: "is_granted('PUBLIC_ACCESS')"),
-      new Put(security: "is_granted('ROLE_USER') and object == user"),
-      new Delete(security: "is_granted('ROLE_ADMIN')"),
-      new Patch(security: "is_granted('ROLE_USER') and object == user"),
-      ]
-      security: "is_granted('ROLE_USER')",//default access operation unless the operation has his own security
-      )]
-      class User {}
+      - ## Authorization
+           - <yel>access control 
+        ```
+          #[ApiResource(
+          operations: [
+          new Get(security: "is_granted('ROLE_USER') and object == user"),
+          new GetCollection(security: "is_granted('ROLE_ADMIN')"),
+          new Post(security: "is_granted('PUBLIC_ACCESS')"),
+          new Put(security: "is_granted('ROLE_USER') and object == user"),
+          new Delete(security: "is_granted('ROLE_ADMIN')"),
+          new Patch(security: "is_granted('ROLE_USER') and object == user"),
+          ]
+          security: "is_granted('ROLE_USER')",//default access operation unless the operation has his own security
+          )]
+          class User {}
    
-        ____________________________________________________________________________________________________
+            ____________________________________________________________________________________________________
     
-      #[ApiResource (
-      operations: [
-        new Get(),
-        new GetCollection(),
-        new Post(),
-        new Put(security: "is_granted('ROLE_ADMIN') or object.owner == user"),
-        new Delete(security: "is_granted('ROLE_ADMIN')"),
-        new Patch(security: "is_granted('ROLE_USER') and object.owner == user"),
-      ],
-      security: "is_granted('ROLE_USER')",//default access operation unless the operation has his own security
-      )]
-      class CheeseListing{}
+          #[ApiResource (
+          operations: [
+            new Get(),
+            new GetCollection(),
+            new Post(),
+            new Put(security: "is_granted('ROLE_ADMIN') or object.owner == user"),
+            new Delete(security: "is_granted('ROLE_ADMIN')"),
+            new Patch(security: "is_granted('ROLE_USER') and object.owner == user"),
+          ],
+          security: "is_granted('ROLE_USER')",//default access operation unless the operation has his own security
+          )]
+          class CheeseListing{}
          
-     ```
-     - voters 
-       - <blue>symfony console make:voter
-       - ```
+         ```
+         - voters 
+           - <blue>symfony console make:voter
+           - ```
          
-              class CheeseListingVoter extends Voter
-                 {
-                 public const EDIT = 'EDIT';
-                public const VIEW = 'VIEW';
-                public const POST = 'POST';
-                public const DELETE = 'DELETE';
+                  class CheeseListingVoter extends Voter
+                     {
+                     public const EDIT = 'EDIT';
+                    public const VIEW = 'VIEW';
+                    public const POST = 'POST';
+                    public const DELETE = 'DELETE';
 
-               public function __construct(private Security $security)
-               {
-                }
-
-
-                protected function supports(string $attribute, mixed $subject): bool
-               {
-
-                 return in_array($attribute, [self::EDIT, self::VIEW, self::POST, self::DELETE])
-                 && $subject instanceof \App\Entity\CheeseListing;
-               }
-
-              protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
-              {
-                $user = $token->getUser();
-               // if the user is anonymous, do not grant access
-               if (!$user instanceof UserInterface) {
-               return false;
-               }
-
-                // ... (check conditions and return true to grant permission) ...
-                switch ($attribute) {
-                  case self::EDIT:
-                   if( $subject->getOwner === $user){
-                     return true;
+                   public function __construct(private Security $security)
+                   {
                     }
-                   if( $this->security->isGranted('ROLE_ADMIN')){
-                    return true;
-                    }
-                  return false;
-                 case  self::DELETE:
-                  if( $this->security->isGranted('ROLE_ADMIN')){
-                    return true;
+
+
+                    protected function supports(string $attribute, mixed $subject): bool
+                   {
+
+                     return in_array($attribute, [self::EDIT, self::VIEW, self::POST, self::DELETE])
+                     && $subject instanceof \App\Entity\CheeseListing;
                    }
-                  return false;
 
-                }
+                  protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
+                  {
+                    $user = $token->getUser();
+                   // if the user is anonymous, do not grant access
+                   if (!$user instanceof UserInterface) {
+                   return false;
+                   }
 
-              throw new \RuntimeException(sprintf('Unhandled attribute "%s"',$attribute));
-              }
-             }
+                    // ... (check conditions and return true to grant permission) ...
+                    switch ($attribute) {
+                      case self::EDIT:
+                       if( $subject->getOwner === $user){
+                         return true;
+                        }
+                       if( $this->security->isGranted('ROLE_ADMIN')){
+                        return true;
+                        }
+                      return false;
+                     case  self::DELETE:
+                      if( $this->security->isGranted('ROLE_ADMIN')){
+                        return true;
+                       }
+                      return false;
+
+                    }
+
+                  throw new \RuntimeException(sprintf('Unhandled attribute "%s"',$attribute));
+                  }
+                 }
 
 
 
 
-           CheeseListing{} 
-           new Put(security: "is_granted('EDIT')"),
-           new Delete(security: "is_granted('DELETE')"),
+               CheeseListing{} 
+               new Put(security: "is_granted('EDIT')"),
+               new Delete(security: "is_granted('DELETE')"),
+           ```
+         - Conditional Field Setup
+           - context builder
+       
        ```
-     - 
+       
+        #[ApiResource(
+        normalizationContext: ['groups' => ['book:output']],
+        denormalizationContext: ['groups' => ['book:input']],
+        )]
+        class Book
+        {
+        // ...
+
+        /**
+         * This field can be managed only by an admin
+         */
+        #[Groups(['book:output', 'admin:input'])]
+        public bool $active = false;
+       }
+      
+
+
+       # api/config/services.yaml
+      
+       services:
+          # ...
+          App\Serializer\BookContextBuilder:
+             decorates: 'api_platform.serializer.context_builder'
+             arguments: [ '@App\Serializer\BookContextBuilder.inner' ]
+             autoconfigure: false
+      
+
+       <?php
+       // api/src/Serializer/BookContextBuilder.php
+      namespace App\Serializer;
+
+       use ApiPlatform\Serializer\SerializerContextBuilderInterface;
+       use Symfony\Component\HttpFoundation\Request;
+       use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+       use App\Entity\Book;
+
+       final class BookContextBuilder implements SerializerContextBuilderInterface
+       {
+       private $decorated;
+       private $authorizationChecker;
+
+      public function __construct(SerializerContextBuilderInterface $decorated, AuthorizationCheckerInterface $authorizationChecker)
+      {
+        $this->decorated = $decorated;
+        $this->authorizationChecker = $authorizationChecker;
+      }
+
+      public function createFromRequest(Request $request, bool $normalization, ?array $extractedAttributes = null): array
+      {
+        $context = $this->decorated->createFromRequest($request, $normalization, $extractedAttributes);
+        $resourceClass = $context['resource_class'] ?? null;
+
+        if ($resourceClass === Book::class && isset($context['groups']) && $this->authorizationChecker->isGranted('ROLE_ADMIN') && false === $normalization) {
+            $context['groups'][] = 'admin:input';
+        }
+
+        return $context;
+      }
+      }
+      
+    ```
+         - 
   
   - ## Test
      - <blue>composer require test --dev
